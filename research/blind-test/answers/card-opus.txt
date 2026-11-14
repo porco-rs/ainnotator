@@ -1,0 +1,31 @@
+## 1. What the user wants
+
+The legend at the bottom says it lists the user's 5 annotations: the numbered marks were added afterwards, and everything else belongs to the screen.
+
+| # | Type | Element | Wish |
+|---|---|---|---|
+| **01** | CHANGE (box) | The **Export** button at top right | Move it next to the search field. |
+| **02** | BUG (arrow) | The **Total** column. The arrow points to $214.20 in row 4713. | Totals show net amounts but should show gross. |
+| **03** | QUESTION (oval) | The **Cancelled** card (2) | There's no note. It's a question, not a task. I'd ask what they mean and wouldn't change anything. |
+| **04** | KEEP (box) | The step bar **Intake / Review / Shipping** | Don't change it, and keep it intact when making the other changes. |
+| **05** | CHANGE (point) | The footer line "Last updated 14 Nov 2026, 11:58 · 5 of 128 orders" | The font is too small, so make it bigger. |
+
+## 2. Highlights I deliberately don't treat as wishes
+
+- **Red "New: CSV export" with an arrow to Export:** it has no number, and the legend says everything without a number belongs to the screen. It's probably an in-app hint about a new feature.
+- **Purple frame around "In progress":** it has no number. It looks like a selected or focus state of the card.
+- **Yellow circle in the "Shipped" card:** it has no number. It looks like a UI indicator, such as a status dot or loader.
+- **Red frame around qty "-4" (row 4712):** it looks like the app's own validation styling. The odd values (-4, total "–") might be a real data problem, but nobody asked me to fix them.
+- **Green "Paid" pills:** these are normal status badges.
+- **Red "3" next to Messages:** this is a notification counter.
+- **"01 / 02 / 03" in the step bar:** these are step numbers in the UI, not annotation numbers.
+- **Black hatching over customers in 4711 and 4715:** these hide personal data. I won't read anything into them or try to restore them.
+
+## 3. Where I'm unsure
+
+- **02, scope:** the arrow starts in row 4714 and points to 4713. I'm assuming the whole Total column (the net vs. gross calculation) is meant, not just that one cell. I also don't know the tax rate.
+- **03:** without a note, I can't tell what the question about the Cancelled card is.
+- **01, layout:** I don't know whether Export goes to the left or right of the search field, or where "Messages" ends up.
+- **"New: CSV export":** this could be a user note they forgot to number. If so, it might mean the export should produce CSV.
+- **Redaction:** the footer says "1 area redacted," but I see two hatched areas. The one in 4715 looks drawn by hand, so it might be a separate mark.
+- **05, size:** marker 05 partly covers the footer text, and no target font size is given.

@@ -1,0 +1,56 @@
+{
+  "schemaVersion": 1,
+  "tool": "ainnotator",
+  "createdAt": "2026-11-14T10:12:41+01:00",
+  "image": "~/.ainnotator/2026-11-14_1012.png",
+  "crop": [
+    1803,
+    1187
+  ],
+  "context": {
+    "app": "Browser",
+    "window": "Checkout",
+    "url": "tinyplant.example/checkout",
+    "repo": "tiny-plant",
+    "branch": "main"
+  },
+  "marks": [
+    {
+      "n": 1,
+      "intent": "change",
+      "shape": "box",
+      "at": [
+        541,
+        646,
+        1546,
+        934
+      ],
+      "note": "Apply next to the field"
+    },
+    {
+      "n": 2,
+      "intent": "question",
+      "shape": "oval",
+      "at": [
+        1401,
+        454,
+        1566,
+        620
+      ],
+      "note": "Real stock?"
+    },
+    {
+      "n": 3,
+      "intent": "bug",
+      "shape": "arrow",
+      "at": [
+        1674,
+        702,
+        1540,
+        587
+      ],
+      "note": "Should be $46.35"
+    }
+  ],
+  "redacted": 1
+}

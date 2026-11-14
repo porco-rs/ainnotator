@@ -1,0 +1,32 @@
+I only looked at `image.png`. It shows an "Acme Supply · Orders" dashboard. On top of it are five numbered annotation tags (small monospace labels 01–05). Only one of them has any text with it.
+
+**1. What the user wants, by mark**
+
+| Mark | Points at | What I take it to mean |
+|---|---|---|
+| **01** (purple box) | The **Export** button in the header | Make Export work as a **CSV export**. The red note "New: CSV export" points here with an arrow, so I read it as the description for 01. |
+| **02** (red arrow) | The **Total** cell **$214.20** in row 4713 (the arrow starts near row 4714) | Something about the Total value or column needs to change. No text says what. |
+| **03** (yellow ellipse) | The **Cancelled = 2** stat card | Something about this card needs to change. No text says what. |
+| **04** (green box) | The step bar **Intake / Review / Shipping** | Something about the step bar needs to change. No text says what. |
+| **05** (purple tag) | The footer text **"Last updated … · 5 of 128 orders"** | Probably about the order count or paging in the footer. No text says what. |
+
+Only 01 is a concrete task. For 02–05 I know which element is meant but not what should change.
+
+**2. Highlights I deliberately do NOT treat as requests**
+
+- **Teal "01 / 02 / 03" badges on Intake/Review/Shipping**: these are the app's own step numbers, not annotation tags. The font and style are different.
+- **Red "3" badge next to Messages**: a normal unread-count badge.
+- **Purple border on the "In progress" card**: no tag, so it looks like a selected or active state in the UI.
+- **Yellow ring with a grey dot in the "Shipped" card**: no tag, and it sits inside the card like a status indicator. (See uncertainties.)
+- **Red box around Qty "-4" in row 4712**: no tag, so it looks like the app's own validation error for an invalid quantity.
+- **Green "Paid" pills**: normal status styling.
+- **Black bar (4711) and scribble (4715) over customer names**: privacy redactions by the user, not requests. The underlying data is unknown and doesn't need to be.
+
+**3. Where I'm unsure**
+
+- **02–05 have no text**, so I can't say what change is wanted. I'd have to ask before implementing anything there.
+- **02**: the arrow starts in row 4714 and points at row 4713. It could mean that one value, the whole Total column, or a link between Qty and Total.
+- **"New: CSV export"**: I'm fairly but not fully sure it belongs to 01 and isn't a separate note. Also open: which columns and rows the export should include (all 128 orders or only the 5 visible?), and whether hidden customer names are included.
+- **Yellow ring in "Shipped"**: it's the same colour as mark 03 and may be an untagged user annotation rather than a UI element.
+- **Red box around "-4"**: it's the same red as mark 02 and may be an untagged hint that negative quantities should be validated or blocked.
+- **05**: the tag covers part of the footer text, so I can't fully read the exact wording ("5 of 128 orders").

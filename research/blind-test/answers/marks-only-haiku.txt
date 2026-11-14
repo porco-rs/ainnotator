@@ -1,0 +1,26 @@
+**1. What the user seems to want, point by point** (numbered badges are the requests; the image has no written spec beyond one label)
+
+- **01: Export button (top right, purple box).** Add a CSV export. The red label "New: CSV export" with its arrow points at this button.
+- **02: Total column, row 4713 (Hillside Farm Shop, $214.20).** The red arrow ends on this total, so something about this total seems wrong or needs a change. The badge itself sits near row 4714, so the target is slightly ambiguous.
+- **03: Cancelled card (top right).** The yellow ellipse circles the whole card, so the "2" cancelled count or the card itself should change. No text says how.
+- **04: Status stepper (Intake → Review → Shipping, green box).** Something about this workflow strip should change. No text says what.
+- **05: Footer "Last updated … · 5 of 128 orders".** The badge sits on the "5 of 128" text, so the count or pagination info is the likely target. No text says what.
+
+**2. Things that look like marks but I did not treat as requests**
+
+- **Red circle with "3" next to Messages:** looks like an unread-message counter, a normal UI element rather than an annotation.
+- **Red box around "-4" in row 4712:** it has no number. It is probably a note about a negative quantity, but I can't confirm it is a request, so I'm not counting it as a numbered item. It may belong to 02.
+- **Purple box around the "In progress" card:** no number and no label. It looks like a selected or active state or a highlight, not a clear request.
+- **Yellow circle with a grey dot on the Shipped card:** unlabeled, and it could be a loading indicator, a toggle, or a leftover marker. I'm treating it as unclear.
+- **Black and striped bars over customer names (4711, 4715):** these look like privacy redactions in the screenshot, not features to build.
+- **"–" in the Total for open order 4712 and the Open/Paid pills:** these look like normal data or styling.
+
+**3. Where I'm unsure**
+
+- Whether "Please implement" means all five numbered points, or only the labelled one (01, the CSV export).
+- What 02 asks for: the total of $214.20, the -4 quantity above it, or both.
+- What 03, 04 and 05 each want changed. The marks show location only, with no text.
+- Whether the unlabelled boxes and circles (In progress, Shipped dot, -4) are requests or just highlights.
+- Which app or codebase this screen belongs to. I can't tell that from the image.
+
+I haven't read, changed, or run anything besides this image.

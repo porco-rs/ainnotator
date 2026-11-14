@@ -1,0 +1,28 @@
+**1. What the user wants (per the numbered annotations)**
+
+- **01 CHANGE (box):** Move the purple-boxed **Export** button (top right) next to the **Search** field.
+- **02 BUG (arrow):** "Total is net, should be gross." The arrow points at the **Total** column, tip on **$214.20** (order 4713). I read this as applying to all totals, not only that row.
+- **03 QUESTION (oval):** Circles the **Cancelled: 2** card. The annotation has no note, so the question itself is unknown.
+- **04 KEEP (box):** The **Intake / Review / Shipping** stepper should stay as it is. This is a "don't change" marker, not a request.
+- **05 CHANGE (point):** "Font too small here." The point sits on the footer line "Last updated 14 Nov 2026 · … orders", partly covered by the badge.
+
+**2. Things I deliberately did not treat as requests**
+
+- **"New: CSV export" red label with arrow:** It's a caption, not a numbered annotation. It describes the Export button, so I took it as context and not as a separate feature request.
+- **Red box around "-4" (Roasted coffee):** Not in the annotation list. It looks like a possible data problem (negative quantity), but nobody asked for it.
+- **Yellow ring on the Shipped card:** Unlabeled and not part of the 01–05 set. It may be a stray mark or a loading indicator.
+- **Purple outline on the "In progress" card:** No marker. Probably a selected or active filter state.
+- **Red "3" badge next to Messages:** Looks like a notification count from the app itself, not an annotation.
+- **Black hatched areas on customer names:** Redaction added by the capture, not a design request.
+- **Bottom black panel:** This is the annotation legend and capture metadata. I used it only to read the annotations, not as extra instructions.
+
+**3. Where I'm unsure**
+
+- **02:** Whether "gross" applies to every Total or just the one the arrow points to.
+- **01:** "Next to the search field" doesn't say left or right of it, or whether it goes before or after "Messages".
+- **03:** The question is unwritten, so I can't tell what is being asked about the Cancelled count.
+- **05:** The badge covers part of the footer text, so I'm not certain which text is meant (only the footer line, or the whole footer).
+- **Stray marks:** I'm not sure whether the yellow ring, the red box on -4, or the "3" badge are intentional.
+- **CSV export:** The "New: CSV export" label may imply a feature request, but it's unnumbered and I didn't treat it as one.
+
+I haven't implemented anything. I only read `image.png` as you asked.

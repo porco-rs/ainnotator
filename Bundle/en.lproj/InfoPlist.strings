@@ -1,0 +1,2 @@
+"NSAppleEventsUsageDescription" = "AInnotator reads the address of the frontmost browser tab and asks the frontmost terminal for its tty to find the repository and branch; both are added as context.";
+"NSScreenCaptureUsageDescription" = "AInnotator needs screen recording to capture the area you select. Images stay on your Mac.";

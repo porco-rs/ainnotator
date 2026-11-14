@@ -1,0 +1,19 @@
+1. I read the numbered annotations as these likely requests:
+
+   - **01 — Export button:** add CSV export, supported by “New: CSV export” and its arrow.
+   - **02 — Total column:** change or check the indicated **$214.20** amount; the desired change is unspecified.
+   - **03 — Cancelled card:** address the highlighted card showing **2**; no specific change is stated.
+   - **04 — Workflow strip:** address **Intake → Review → Shipping**; the green rectangle identifies the area.
+   - **05 — Footer:** address the update timestamp or “5 of 128 orders” text near the marker.
+
+2. Other conspicuous elements I would **not independently treat as requests**:
+
+   - Purple border around **In progress**, yellow ring around the dot beside **Shipped**, and red border around **−4**: unnumbered highlights with no instructions.
+   - Blacked-out customer names: likely privacy redactions, not requested interface elements.
+   - Red **Messages 3** badge, green **Paid** pills, and teal workflow numbers: appear to be existing interface styling.
+
+3. I am unsure:
+
+   - What changes markers **02–05** actually require; they identify locations without describing outcomes.
+   - Whether the unnumbered borders and ring are feedback or existing screen state.
+   - Whether CSV export should include the five visible rows, all 128 orders, or another selection.

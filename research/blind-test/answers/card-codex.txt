@@ -1,0 +1,21 @@
+1. What I understand the user wants:
+
+   - **01 — Export button:** Move it next to the search field.
+   - **02 — Total:** Show the gross amount instead of the net amount. The arrow points to **$214.20 in order 4713**.
+   - **03 — Cancelled card:** The user has a question about this card, but provided no question text.
+   - **04 — Workflow steps:** Keep the boxed **Intake → Review → Shipping** area.
+   - **05 — Footer:** Increase the font size around “Last updated … · 5 of 128 orders.”
+
+2. Other apparent hints I deliberately do **not** interpret as requests:
+
+   - The purple border around **In progress**, yellow circle on **Shipped**, and red outline around **−4**: these have no matching user annotation.
+   - **“New: CSV export”** and its red arrow: existing screen content, according to the legend.
+   - The message badge **3** and workflow numbers **01–03**: interface elements, not annotation identifiers.
+   - The black hatching over a customer name: explicitly a redaction. The separate gray hatched mark also carries no user instruction.
+   - The negative quantity and missing total look suspicious, but the user did not explicitly request fixes for them.
+
+3. Where I am unsure:
+
+   - What question **03** asks about the Cancelled card.
+   - Whether **02** applies only to the indicated order or every total; the tax rate is unspecified.
+   - Which side of Search should receive Export, and the desired footer font size.
