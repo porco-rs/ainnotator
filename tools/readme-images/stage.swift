@@ -11,6 +11,7 @@ import UniformTypeIdentifiers
 //   stage anatomy     <work> <out.png>        the card at 1:1 with lettered callouts
 //   stage blind       <test-dir> <out.png>    the blind test, from research/blind-test
 //   stage everywhere  <work> <out.png>        one ⌘V, terminal and browser
+//   stage remote      <work> <out.png>        the same ⌘V when the agent runs on another machine
 //   stage social      <work> <icon.png> <out.png>
 //   stage button      <out.png>               the download button, 264×56 at 2×, transparent around it
 //
@@ -486,6 +487,74 @@ func everywhere(_ work: String, _ out: String) throws {
     try a.save(out)
 }
 
+// MARK: Another machine
+
+/// Left the Mac with the capture, right a terminal on another machine that shows it as [Image #1]; between them
+/// the user's own ssh. Same proportions as `everywhere`, so the two read as a pair.
+func remote(_ work: String, _ out: String) throws {
+    let card = try load(work + "/card.png")
+    let a = Canvas(1760, 900)
+    a.ground()
+    let margin: CGFloat = 64
+    a.keycap("⌘V", center: CGPoint(x: a.w / 2, y: 92), size: 34)
+    a.text("the same paste, when the agent runs on another machine", a.w / 2, 172, mono(22, .medium), muted, align: .center, kern: 0.8)
+
+    let top: CGFloat = 230, height: CGFloat = 480
+    let leftWidth: CGFloat = 560, bridge: CGFloat = 230
+    let rightWidth = a.w - 2 * margin - leftWidth - bridge
+    let aspect = CGFloat(card.height) / CGFloat(card.width)
+
+    // The Mac: the capture as it was saved.
+    let m = CGRect(x: margin, y: top, width: leftWidth, height: height)
+    a.window(m, title: "your Mac", dark: true, bar: 40, radius: 14)
+    let saved = CGRect(x: m.minX + 30, y: m.minY + 40 + 30, width: leftWidth - 60, height: (leftWidth - 60) * aspect)
+    a.c.saveGState()
+    a.c.addPath(CGPath(roundedRect: m.insetBy(dx: 1, dy: 1), cornerWidth: 14, cornerHeight: 14, transform: nil)); a.c.clip()
+    a.image(card, saved, radius: 8)
+    let fade = CGGradient(colorsSpace: CGColorSpace(name: CGColorSpace.sRGB), colors: [hex(0x111317, 0), hex(0x111317, 1)] as CFArray, locations: [0, 1])!
+    a.c.drawLinearGradient(fade, start: CGPoint(x: 0, y: m.maxY - 120), end: CGPoint(x: 0, y: m.maxY - 8), options: [.drawsAfterEndLocation])
+    a.c.restoreGState()
+
+    // The bridge: the user's own ssh, after one yes for this machine.
+    let from = CGPoint(x: m.maxX + 26, y: top + height / 2), to = CGPoint(x: m.maxX + bridge - 26, y: top + height / 2)
+    a.line([from, to], hex(0xFFFFFF, 0.6), width: 3)
+    a.line([CGPoint(x: to.x - 14, y: to.y - 11), to, CGPoint(x: to.x - 14, y: to.y + 11)], hex(0xFFFFFF, 0.6), width: 3)
+    a.text("your own ssh", (from.x + to.x) / 2, from.y - 22, mono(21, .medium), textColor, align: .center)
+    a.text("asks once", (from.x + to.x) / 2, from.y + 38, mono(18), dim, align: .center)
+    a.text("per machine", (from.x + to.x) / 2, from.y + 62, mono(18), dim, align: .center)
+
+    // The other machine: the prompt of an agent over SSH, and under it what [Image #1] stands for.
+    let t = CGRect(x: m.maxX + bridge, y: top, width: rightWidth, height: height)
+    a.window(t, title: "ssh devbox", dark: true, bar: 40, radius: 14)
+    let prompt = t.minY + 40 + 62
+    let tagX = t.minX + 30 + a.measure("> ", mono(25))
+    let tagWidth = a.measure("[Image #1]", mono(25, .semibold))
+    a.fill(CGRect(x: tagX - 5, y: prompt - 25, width: tagWidth + 10, height: 34), hex(0xFFFFFF, 0.10), radius: 6)
+    let end = a.runs([("> ", mono(25), muted), ("[Image #1]", mono(25, .semibold), textColor), (" fix these", mono(25), textColor)], t.minX + 30, prompt)
+    a.fill(CGRect(x: end + 3, y: prompt - 24, width: 13, height: 30), hex(0xFFFFFF, 0.85))
+    let thumbWidth: CGFloat = rightWidth - 60
+    let thumb = CGRect(x: t.minX + 30, y: prompt + 96, width: thumbWidth, height: thumbWidth * aspect)
+    let joint = CGPoint(x: tagX + tagWidth / 2, y: prompt + 16)
+    a.line([joint, CGPoint(x: joint.x, y: thumb.minY - 6)], hex(0xFFFFFF, 0.45), width: 2, dash: [4, 5])
+    a.circle(CGPoint(x: joint.x, y: thumb.minY - 6), 4, fill: hex(0xFFFFFF, 0.7))
+    a.text("the copy in ~/.ainnotator on that machine", joint.x + 18, prompt + 62, mono(19), dim)
+    a.c.saveGState()
+    a.c.addPath(CGPath(roundedRect: t.insetBy(dx: 1, dy: 1), cornerWidth: 14, cornerHeight: 14, transform: nil)); a.c.clip()
+    a.image(card, thumb, alpha: 0.92, radius: 8)
+    a.c.drawLinearGradient(fade, start: CGPoint(x: 0, y: t.maxY - 150), end: CGPoint(x: 0, y: t.maxY - 8), options: [.drawsAfterEndLocation])
+    a.c.restoreGState()
+
+    let captionTop = top + height + 64
+    for (r, title, detail) in [
+        (m, "On your Mac", "The card is saved as always."),
+        (t, "On the other machine", "Claude Code and Codex over SSH attach it as [Image #1]."),
+    ] {
+        a.text(title, r.minX, captionTop, sans(30, .semibold), textColor)
+        a.text(detail, r.minX, captionTop + 44, sans(24), muted)
+    }
+    try a.save(out)
+}
+
 // MARK: Social preview
 
 let headline = ["Show,", "don’t type."]
@@ -537,7 +606,7 @@ func downloadButton(_ out: String) throws {
 do {
     let args = CommandLine.arguments
     guard args.count >= 4 || (args.count == 3 && args[1] == "button") else {
-        throw Failure.message("usage: stage <hero-frames|hero-still|anatomy|blind|everywhere|social|button> …")
+        throw Failure.message("usage: stage <hero-frames|hero-still|anatomy|blind|everywhere|remote|social|button> …")
     }
     switch args[1] {
     case "button": try downloadButton(args[2])
@@ -561,6 +630,7 @@ do {
     case "anatomy": try anatomy(args[2], args[3])
     case "blind": try blind(args[2], args[3])
     case "everywhere": try everywhere(args[2], args[3])
+    case "remote": try remote(args[2], args[3])
     case "social":
         guard args.count == 5 else { throw Failure.message("social needs work, icon and output") }
         try social(args[2], args[3], args[4])

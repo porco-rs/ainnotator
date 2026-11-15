@@ -2,7 +2,7 @@
 
 ### Show, don't type.
 
-AInnotator lives in your Mac's menu bar. Press `⌥⇧A`, mark what you mean right on the screen, press `↵` twice, and paste one image into Claude Code, Codex, claude.ai or ChatGPT. The image explains itself, so you don't have to.
+AInnotator lives in your Mac's menu bar. Press `⌥⇧A`, mark what you mean right on the screen, press `↵` twice, and paste one image into Claude Code, Codex, claude.ai or ChatGPT, even when your agent runs on another machine over SSH. The image explains itself, so you don't have to.
 
 ![A checkout page with a total of $0.00. Option-Shift-A freezes the screen, a drag selects the page, then a purple box "Apply next to the field", a red arrow to the total "Should be $46.35", a blacked-out e-mail address, a green box around the delivery options and a yellow oval "Real stock?" around an "Only 2 left" badge. Return twice copies it. In the terminal, Command-V gives "[Image #1] fix these", and below it the card: the screenshot with numbered marks and a legend listing all four.](assets/readme/hero.gif)
 
@@ -52,15 +52,22 @@ Checked by hand: Claude Code and Codex in Ghostty; claude.ai, ChatGPT and Claude
 
 ### When the agent runs on another machine
 
-If your terminal is connected to another machine over SSH, AInnotator copies the card there and puts the path on that machine on the clipboard. `⌘V` still does the rest: Claude Code or Codex over SSH shows `[Image #1]`, as it does on your Mac. Switch to a browser, and the same `⌘V` pastes the picture again.
+![Command-V when the agent runs on another machine. Left, a window named "your Mac" holds the card. An arrow labelled "your own ssh, asks once per machine" leads to a terminal named "ssh devbox" that shows "[Image #1] fix these", with the card below as the copy on that machine.](assets/readme/over-ssh.png)
 
-It works through your own SSH setup, so your keys, config and shared connections count as they do when you type `ssh` yourself. The card goes into a private folder, `~/.ainnotator`, on that machine; older cards are removed there after the same 1, 7 or 30 days, the next time one is copied. Only the finished card goes, with redacted areas already blacked out.
+Your agent runs on a dev box, and a terminal can't carry a picture there: paste a screenshot over SSH, and the other side gets a path it can't open. AInnotator copies the card to that machine first, so the same `⌘V` shows `[Image #1]` in Claude Code or Codex over SSH. Switch to a browser, and `⌘V` pastes the picture as always.
 
-The first time for each machine, the receipt asks whether it may copy there. Until you say yes, nothing connects. If the machine doesn't take the copy, or wants a password, everything stays local and the receipt says so; `⌘V` pastes the local file as before. Settings let you turn it off and forget the machines you confirmed.
+There's nothing to set up. It goes through your own SSH setup, with your keys, config and shared connections, and the receipt asks once for each machine. Until you say yes, nothing connects.
 
-It needs a terminal AInnotator can read the connection from: Ghostty, Terminal or iTerm. Not covered: the terminal inside VS Code, mosh, a `tmux` you started before `ssh`, and cloud environments without SSH.
+<details>
+<summary>The fine print</summary>
 
-Checked by hand: Claude Code in Ghostty, against a test machine.
+- The card goes into a private folder, `~/.ainnotator`, on that machine. Only the finished card goes, with redacted areas already blacked out. Older cards are removed there after the same 1, 7 or 30 days, the next time one is copied.
+- If the machine doesn't take the copy, or wants a password, everything stays local and the receipt says so; `⌘V` pastes the local file as before.
+- Settings let you turn it off and forget the machines you confirmed.
+- It needs a terminal AInnotator can read the connection from: Ghostty, Terminal or iTerm. Not covered: the terminal inside VS Code, mosh, a `tmux` you started before `ssh`, and cloud environments without SSH.
+- Checked by hand: Claude Code in Ghostty, against a test machine.
+
+</details>
 
 ### Fast, then out of the way
 

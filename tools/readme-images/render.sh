@@ -41,6 +41,7 @@ sips -s format png -Z 512 Bundle/AppIcon.icns --out "$work/icon.png" >/dev/null
 # The blind test shows the material that was actually tested.
 "$work/stage" blind research/blind-test "$out/blind-test.png"
 "$work/stage" everywhere "$work" "$out/everywhere.png"
+"$work/stage" remote "$work" "$out/over-ssh.png"
 "$work/stage" social "$work" "$work/icon.png" "$out/social-preview.png"
 "$work/stage" button "$out/download-button.png"
 
@@ -58,7 +59,7 @@ done
 # GitHub takes at most 1 MB for the social preview.
 [ "$(stat -f%z "$out/social-preview.png")" -lt 1000000 ] || { echo 'social-preview.png exceeds 1 MB' >&2; exit 1; }
 
-for name in hero.gif hero.png card-anatomy.png blind-test.png everywhere.png social-preview.png download-button.png; do
+for name in hero.gif hero.png card-anatomy.png blind-test.png everywhere.png over-ssh.png social-preview.png download-button.png; do
   file="$out/$name"
   if [ ! -s "$file" ] && [ "$name" = blind-test.png ]; then continue; fi
   test -s "$file"
