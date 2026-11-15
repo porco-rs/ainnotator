@@ -70,7 +70,7 @@ After your first capture from a browser or a terminal, macOS may ask whether AIn
 
 Settings let you start AInnotator at login and choose how long captures are kept. There's no built-in updater: choose **Watch → Custom → Releases** at the top of this page, and GitHub tells you when a new version is out.
 
-Official releases come only from [this repository's releases](https://github.com/porco-rs/ainnotator/releases), signed by Leon Vincent Schwahn.
+Official releases come only from [this repository's releases](https://github.com/porco-rs/ainnotator/releases), signed by Leon Schwahn.
 
 <details>
 <summary>Check it before you trust it</summary>
