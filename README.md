@@ -6,7 +6,9 @@ AInnotator lives in your Mac's menu bar. Press `⌥⇧A`, mark what you mean rig
 
 ![A checkout page with a total of $0.00. Option-Shift-A freezes the screen, a drag selects the page, then a purple box "Apply next to the field", a red arrow to the total "Should be $46.35", a blacked-out e-mail address, a green box around the delivery options and a yellow oval "Real stock?" around an "Only 2 left" badge. Return twice copies it. In the terminal, Command-V gives "[Image #1] fix these", and below it the card: the screenshot with numbered marks and a legend listing all four.](assets/readme/hero.gif)
 
-**[Download for Mac](https://github.com/porco-rs/ainnotator/releases)** · free and open source · everything stays on your Mac
+<a href="https://github.com/porco-rs/ainnotator/releases/latest/download/AInnotator.dmg"><img src="assets/readme/download-button.png" alt="Download AInnotator for Mac" width="264"></a>
+
+Free and open source · everything stays on your Mac · [release notes and checksum](https://github.com/porco-rs/ainnotator/releases/latest)
 
 Needs macOS 26 or later on Apple silicon, and permission to record the screen.
 
@@ -58,7 +60,7 @@ Press `X` and drag over anything private. AInnotator overwrites those pixels in 
 
 ## Your first minute
 
-1. **Download** the DMG from [Releases](https://github.com/porco-rs/ainnotator/releases), open it, and drag AInnotator to Applications.
+1. **[Download the DMG](https://github.com/porco-rs/ainnotator/releases/latest/download/AInnotator.dmg)**, open it, and drag AInnotator to Applications.
 
 2. **Open it.** A small icon appears in the menu bar: four corners and a dot.
 

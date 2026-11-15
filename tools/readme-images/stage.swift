@@ -12,6 +12,7 @@ import UniformTypeIdentifiers
 //   stage blind       <test-dir> <out.png>    the blind test, from research/blind-test
 //   stage everywhere  <work> <out.png>        one ⌘V, terminal and browser
 //   stage social      <work> <icon.png> <out.png>
+//   stage button      <out.png>               the download button, 264×56 at 2×, transparent around it
 //
 // <work> holds screen.png, card.png, overlay-final.png, overlay/ and timeline.tsv.
 
@@ -509,12 +510,37 @@ func social(_ work: String, _ iconPath: String, _ out: String) throws {
     try a.save(out)
 }
 
+// MARK: Download button
+
+/// The README's download button. The fill is the purple of CHANGE, darker so white reads on it; the corners are
+/// transparent, so it sits on GitHub's light and dark page alike. The README shows it at 264 points wide.
+func downloadButton(_ out: String) throws {
+    let a = Canvas(264, 56, scale: 2)
+    let r = CGRect(x: 0, y: 0, width: a.w, height: a.h)
+    let white = hex(0xFFFFFF)
+    a.fill(r, oklch(0.52, 0.21, 293), radius: 14)
+    a.stroke(r, hex(0xFFFFFF, 0.16), line: 1, radius: 14)
+    let label = "Download for Mac", font = sans(19, .semibold)
+    let icon: CGFloat = 20, gap: CGFloat = 12
+    let start = ((a.w - icon - gap - a.measure(label, font)) / 2).rounded()
+    // An arrow into a tray.
+    let x = start + icon / 2
+    a.line([CGPoint(x: x, y: 15), CGPoint(x: x, y: 33)], white, width: 2.4)
+    a.line([CGPoint(x: x - 7, y: 26), CGPoint(x: x, y: 33), CGPoint(x: x + 7, y: 26)], white, width: 2.4)
+    a.line([CGPoint(x: x - 10, y: 41), CGPoint(x: x + 10, y: 41)], white, width: 2.4)
+    a.text(label, start + icon + gap, 35, font, white)
+    try a.save(out)
+}
+
 // MARK: Main
 
 do {
     let args = CommandLine.arguments
-    guard args.count >= 4 else { throw Failure.message("usage: stage <hero-frames|hero-still|anatomy|blind|everywhere|social> …") }
+    guard args.count >= 4 || (args.count == 3 && args[1] == "button") else {
+        throw Failure.message("usage: stage <hero-frames|hero-still|anatomy|blind|everywhere|social|button> …")
+    }
     switch args[1] {
+    case "button": try downloadButton(args[2])
     case "hero-frames":
         let work = args[2]
         let frames = try timeline(work)
