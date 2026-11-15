@@ -10,9 +10,6 @@ AInnotator lives in your Mac's menu bar. Press `⌥⇧A`, mark what you mean rig
 
 Needs macOS 26 or later on Apple silicon, and permission to record the screen.
 
-<!-- Delete this note on release day. -->
-> The first signed release isn't out yet. Choose **Watch → Custom → Releases** at the top of this page and GitHub tells you when it lands, or [build it yourself](#build-it-yourself) today.
-
 ---
 
 You've found the bug. You take a screenshot, paste it into the chat and start typing: *the total at the bottom right is wrong, and the Apply link should sit next to the coupon field, and leave the delivery options alone, those are fine.* The model answers with confidence and fixes something else. Your red arrow looked just like the app's own red badge.
