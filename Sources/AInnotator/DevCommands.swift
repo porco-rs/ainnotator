@@ -14,6 +14,7 @@ import UniformTypeIdentifiers
 /// screen with `tools/readme-images/screen.swift`. The sample marks below are placed for that screen (1024 × 640 pt).
 enum DevCommands {
     private static var probeClip: PendingClip?
+    private static var probeFollower: ClipFollower?
     private static let exampleImageVariable = "AI_EXAMPLE_IMAGE"
     private static let exampleImageHelp = """
         An example screen is needed. `just selftest` draws one at build/example-screen.png, or by hand:
@@ -52,6 +53,29 @@ enum DevCommands {
             print("clipboard holds \(arguments[2]) for \(Int(seconds)) s")
             DispatchQueue.main.asyncAfter(deadline: .now() + seconds) { NSApp.terminate(nil) }
             return false
+        case "--clip-follow":
+            // Puts an existing PNG on the REAL clipboard as a capture that was copied to another machine and lets
+            // the clipboard follow the app in front: for pasting into a terminal and into a browser by hand.
+            guard arguments.count >= 5, let seconds = Double(arguments[4]), let png = FileManager.default.contents(atPath: arguments[2]) else {
+                print("usage: --clip-follow <card.png> <path-on-the-other-machine> <seconds>"); exit(64)
+            }
+            let clip = PendingClip(file: URL(fileURLWithPath: arguments[2]))
+            clip.fulfill(png: png, saved: true)
+            clip.expectRemote()
+            clip.fulfillRemote(path: arguments[3])
+            probeClip = clip
+            let describe: (PendingClip.Form) -> String = { $0 == .remote ? "the path on the other machine" : "the file" }
+            let front = NSWorkspace.shared.frontmostApplication
+            let form = ClipFollower.form(forFrontmost: front?.bundleIdentifier)
+            Clipboard.publish(clip, form: form)
+            print("\(front?.localizedName ?? "?") in front: the clipboard carries \(describe(form))")
+            let follower = ClipFollower()
+            follower.onSwitch = { form, name in print("\(name) in front: the clipboard carries \(describe(form))") }
+            follower.follow(clip)
+            probeFollower = follower
+            print("the clipboard follows the app in front for \(Int(seconds)) s")
+            DispatchQueue.main.asyncAfter(deadline: .now() + seconds) { NSApp.terminate(nil) }
+            return false
         case "--menu-dump":
             let menu = StatusMenu(language: language, hasLastArea: { false }, capture: {}, repeatCapture: {}, settings: {})
             print(menu.dump())
@@ -72,7 +96,14 @@ enum DevCommands {
             exit(0)
         case "--receipt":
             guard arguments.count >= 3 else { print("usage: --receipt <out.png> [image.png]\n\(exampleImageHelp)"); exit(64) }
-            renderReceipt(out: arguments[2], image: arguments.count > 3 ? arguments[3] : nil, language: language)
+            // An optional fifth word shows the row for another machine: ask, copied or failed.
+            let remote: ReceiptRemote? = switch arguments.count > 4 ? arguments[4] : "" {
+            case "ask": .ask("devbox")
+            case "copied": .copied("devbox")
+            case "failed": .failed("devbox")
+            default: nil
+            }
+            renderReceipt(out: arguments[2], image: arguments.count > 3 ? arguments[3] : nil, language: language, remote: remote)
             exit(0)
         case "--receipt-probe":
             guard arguments.count >= 3 else { print("usage: --receipt-probe <out-dir> [image.png]\n\(exampleImageHelp)"); exit(64) }
@@ -277,8 +308,10 @@ enum DevCommands {
         }
     }
 
-    private static func renderReceipt(out: String, image path: String?, language: Language) {
-        let view = ReceiptView(model: sampleReceiptModel(image: loadExampleImage(path), language: language), language: language)
+    private static func renderReceipt(out: String, image path: String?, language: Language, remote: ReceiptRemote? = nil) {
+        var model = sampleReceiptModel(image: loadExampleImage(path), language: language)
+        model.remote = remote
+        let view = ReceiptView(model: model, language: language)
         guard let bitmap = view.bitmapImageRepForCachingDisplay(in: view.bounds) else { print("cannot create receipt bitmap"); exit(1) }
         view.cacheDisplay(in: view.bounds, to: bitmap)
         guard let data = bitmap.representation(using: .png, properties: [:]) else { print("cannot encode receipt"); exit(1) }

@@ -15,6 +15,18 @@ struct ReceiptModel {
     var jsonBytes: Int
     var marks: [Mark]
     var time: Date
+    /// Set when the terminal in front was connected to another machine.
+    var remote: ReceiptRemote?
+}
+
+/// What became of the capture for the machine a terminal is connected to. The name is the destination as the
+/// user typed it.
+enum ReceiptRemote: Equatable {
+    /// Not confirmed yet: the receipt asks, once per machine. Nothing has been sent.
+    case ask(String)
+    case copied(String)
+    /// The copy did not get there; the capture is on the clipboard as a local file.
+    case failed(String)
 }
 
 /// The words of the receipt in one language. The row names TEXT, PNG, FILE and JSON are file kinds and stay as they are.
@@ -28,6 +40,11 @@ struct ReceiptCopy {
     var new: String
     var newCapture: String
     var announcement: (Int) -> String
+    var askRemote: (String) -> String
+    var askRemoteNote: String
+    var confirmRemote: String
+    var remoteDone: (String) -> String
+    var remoteFailed: (String) -> String
 
     static func forLanguage(_ language: Language) -> ReceiptCopy {
         switch language {
@@ -35,13 +52,17 @@ struct ReceiptCopy {
             ReceiptCopy(
                 copied: "COPIED", noMarks: "(no marks)", marks: { "\($0) mark\($0 == 1 ? "" : "s")" }, path: "Path",
                 card: "Card", consumers: "Agents", new: "New", newCapture: "New capture",
-                announcement: { "Copied, \($0) mark\($0 == 1 ? "" : "s")" }
+                announcement: { "Copied, \($0) mark\($0 == 1 ? "" : "s")" },
+                askRemote: { "Copy this capture to \($0)?" }, askRemoteNote: "Asked once per machine. Only the card is sent.",
+                confirmRemote: "Copy", remoteDone: { "Copied to \($0)" }, remoteFailed: { "Stays local: could not copy to \($0)" }
             )
         case .de:
             ReceiptCopy(
                 copied: "KOPIERT", noMarks: "(keine Markierungen)", marks: { "\($0) Markierung\($0 == 1 ? "" : "en")" }, path: "Pfad",
                 card: "Karte", consumers: "Agents", new: "Neu", newCapture: "Neue Aufnahme",
-                announcement: { "Kopiert, \($0) Markierung\($0 == 1 ? "" : "en")" }
+                announcement: { "Kopiert, \($0) Markierung\($0 == 1 ? "" : "en")" },
+                askRemote: { "Aufnahme nach \($0) kopieren?" }, askRemoteNote: "Einmal je Rechner. Nur die Karte wird kopiert.",
+                confirmRemote: "Kopieren", remoteDone: { "Kopiert nach \($0)" }, remoteFailed: { "Bleibt lokal, keine Kopie nach \($0)" }
             )
         }
     }
@@ -51,8 +72,12 @@ struct ReceiptCopy {
 /// user is about to paste into.
 final class ReceiptPanel: NSObject {
     private static let visibleFor: TimeInterval = 4
+    /// A question needs time to be read and answered.
+    private static let visibleForAQuestion: TimeInterval = 15
 
     var onClose: (() -> Void)?
+    /// The user said yes to copying to the machine the receipt asks about.
+    var onConfirmRemote: (() -> Void)?
     private let panel: NSPanel
     private let content: ReceiptView
     private let model: ReceiptModel
@@ -71,6 +96,12 @@ final class ReceiptPanel: NSObject {
         panel.contentView = content
         content.onHover = { [weak self] in self?.timer?.invalidate() }
         content.onLeave = { [weak self] in self?.startTimer() }
+        content.onConfirmRemote = { [weak self] in
+            guard let self else { return }
+            let confirm = onConfirmRemote
+            close()
+            confirm?()
+        }
         content.onNew = { [weak self] in
             // Held strongly: closing releases this object in the owner, and the call after it still has to happen.
             guard let self else { return }
@@ -103,7 +134,9 @@ final class ReceiptPanel: NSObject {
 
     private func startTimer() {
         timer?.invalidate()
-        timer = Timer.scheduledTimer(withTimeInterval: Self.visibleFor, repeats: false) { [weak self] _ in
+        var asks = false
+        if case .ask = model.remote { asks = true }
+        timer = Timer.scheduledTimer(withTimeInterval: asks ? Self.visibleForAQuestion : Self.visibleFor, repeats: false) { [weak self] _ in
             MainActor.assumeIsolated { self?.close() }
         }
     }
@@ -137,14 +170,20 @@ final class ReceiptView: ReceiptFlippedView {
     var onHover: (() -> Void)?
     var onLeave: (() -> Void)?
     var onNew: (() -> Void)?
+    var onConfirmRemote: (() -> Void)?
     private(set) var newButton: NSButton?
+    private(set) var confirmButton: NSButton?
     private var tracking: NSTrackingArea?
 
     init(model: ReceiptModel, language: Language = .en) {
         let copy = ReceiptCopy.forLanguage(language)
         let cardHeight = min(460.0, 320.0 * CGFloat(model.card.height) / CGFloat(model.card.width))
         let rowsTop = 32 + cardHeight + 8
-        let total = rowsTop + 4 * 26 + 4 + 46
+        // The row for the other machine, and below it the question with its own button the first time.
+        var asks = false
+        if case .ask = model.remote { asks = true }
+        let remoteHeight: CGFloat = model.remote == nil ? 0 : asks ? 26 + 18 + 36 : 26
+        let total = rowsTop + 4 * 26 + remoteHeight + 4 + 46
         super.init(frame: NSRect(x: 0, y: 0, width: 340, height: total))
         wantsLayer = true
         layer?.backgroundColor = Theme.oklch(0.15, 0.004, 250, alpha: 0.92)
@@ -185,7 +224,26 @@ final class ReceiptView: ReceiptFlippedView {
             line.layer?.backgroundColor = NSColor(white: 1, alpha: 0.06).cgColor
             addSubview(line)
         }
-        let buttonsY = rowsTop + 4 * 26 + 4 + 8
+        if let remote = model.remote {
+            let y = rowsTop + 4 * 26
+            let text: String
+            let color: NSColor
+            switch remote {
+            case .ask(let name): text = copy.askRemote(name); color = .white
+            case .copied(let name): text = copy.remoteDone(name); color = NSColor(cgColor: Theme.oklch(0.78, 0.17, 152)) ?? .green
+            case .failed(let name): text = copy.remoteFailed(name); color = NSColor(cgColor: Theme.oklch(0.86, 0.15, 88)) ?? .yellow
+            }
+            add("SSH", x: 12, y: y + 9, width: 44, size: 9, weight: .regular, tracking: 0.1, color: Self.gray(0.55))
+            add(text, x: 66, y: y + 7, width: 262, size: 11, weight: .regular, color: color)
+            if asks {
+                add(copy.askRemoteNote, x: 66, y: y + 25, width: 262, size: 9, weight: .regular, color: Self.gray(0.60))
+                let confirm = ReceiptButton(title: "", target: self, action: #selector(confirmPressed))
+                style(confirm, title: copy.confirmRemote, key: "", frame: NSRect(x: 10, y: y + 26 + 18 + 4, width: 320, height: 28), light: false)
+                confirm.setAccessibilityLabel(text)
+                confirmButton = confirm
+            }
+        }
+        let buttonsY = rowsTop + 4 * 26 + remoteHeight + 4 + 8
         // The only button, so it takes the whole row.
         let new = ReceiptButton(title: "", target: self, action: #selector(newPressed))
         style(new, title: copy.new, key: "⌥⇧A", frame: NSRect(x: 10, y: buttonsY, width: 320, height: 28), light: true)
@@ -203,6 +261,7 @@ final class ReceiptView: ReceiptFlippedView {
     override func mouseEntered(with event: NSEvent) { onHover?() }
     override func mouseExited(with event: NSEvent) { onLeave?() }
     @objc private func newPressed() { onNew?() }
+    @objc private func confirmPressed() { onConfirmRemote?() }
     private func style(_ button: NSButton, title: String, key: String, frame: NSRect, light: Bool) {
         button.frame = frame
         button.isBordered = false

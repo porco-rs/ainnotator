@@ -33,7 +33,7 @@ final class StatusMenu: NSObject, NSMenuDelegate {
         super.init()
         menu.autoenablesItems = false
         menu.delegate = self
-        let version = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "0.1.0"
+        let version = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "dev"
         let title = NSMenuItem(title: "AInnotator \(version)", action: nil, keyEquivalent: "")
         title.isEnabled = false
         menu.addItem(title)

@@ -8,7 +8,7 @@ AInnotator lives in your Mac's menu bar. Press `⌥⇧A`, mark what you mean rig
 
 <a href="https://github.com/porco-rs/ainnotator/releases/latest/download/AInnotator.dmg"><img src="assets/readme/download-button.png" alt="Download AInnotator for Mac" width="264"></a>
 
-Free and open source · everything stays on your Mac · [release notes and checksum](https://github.com/porco-rs/ainnotator/releases/latest)
+Free and open source · everything stays on your Mac, unless you let it copy a capture to the machine you're working on · [release notes and checksum](https://github.com/porco-rs/ainnotator/releases/latest)
 
 Needs macOS 26 or later on Apple silicon, and permission to record the screen.
 
@@ -50,6 +50,18 @@ AInnotator puts the card on the clipboard the way Finder copies a file. Each app
 
 Checked by hand: Claude Code and Codex in Ghostty; claude.ai, ChatGPT and Claude Design in Chrome; and Safari.
 
+### When the agent runs on another machine
+
+If your terminal is connected to another machine over SSH, AInnotator copies the card there and puts the path on that machine on the clipboard. `⌘V` still does the rest: Claude Code or Codex over SSH shows `[Image #1]`, as it does on your Mac. Switch to a browser, and the same `⌘V` pastes the picture again.
+
+It works through your own SSH setup, so your keys, config and shared connections count as they do when you type `ssh` yourself. The card goes into a private folder, `~/.ainnotator`, on that machine; older cards are removed there after the same 1, 7 or 30 days, the next time one is copied. Only the finished card goes, with redacted areas already blacked out.
+
+The first time for each machine, the receipt asks whether it may copy there. Until you say yes, nothing connects. If the machine doesn't take the copy, or wants a password, everything stays local and the receipt says so; `⌘V` pastes the local file as before. Settings let you turn it off and forget the machines you confirmed.
+
+It needs a terminal AInnotator can read the connection from: Ghostty, Terminal or iTerm. Not covered: the terminal inside VS Code, mosh, a `tmux` you started before `ssh`, and cloud environments without SSH.
+
+Checked by hand: Claude Code in Ghostty, against a test machine.
+
 ### Fast, then out of the way
 
 On the maker's Mac, measured on 14 November 2026: the frozen screen appears about 50 ms after `⌥⇧A`, the clipboard is filled less than 1 ms after `↵`, and the finished card is ready about 50 ms later. At rest the app uses 15 MB. That's one Mac, so read these numbers as a sketch.
@@ -70,7 +82,7 @@ Press `X` and drag over anything private. AInnotator overwrites those pixels in 
 
 After your first capture from a browser or a terminal, macOS may ask whether AInnotator may control that app (**Automation**). That's how the footer learns the page address, or the repository and branch you're in. Say no, and the footer simply leaves them out.
 
-Settings let you start AInnotator at login and choose how long captures are kept. There's no built-in updater: choose **Watch → Custom → Releases** at the top of this page, and GitHub tells you when a new version is out.
+Settings let you start AInnotator at login, choose how long captures are kept, and say whether they may be copied to a remote machine. There's no built-in updater: choose **Watch → Custom → Releases** at the top of this page, and GitHub tells you when a new version is out.
 
 Official releases come only from [this repository's releases](https://github.com/porco-rs/ainnotator/releases), signed by Leon Schwahn.
 
@@ -97,7 +109,7 @@ It should show `TeamIdentifier=DLYUZB2S4C`.
 
 ## Everything stays on your Mac
 
-Your screen shows things that aren't yours to share: customer data, tokens, someone else's e-mail. So everything stays on your Mac. There's no account and no telemetry, and the source is right here.
+Your screen shows things that aren't yours to share: customer data, tokens, someone else's e-mail. So everything stays on your Mac, unless you let a capture be copied to the machine you're working on. That happens only after you confirm the machine, and only with the finished card. There's no account and no telemetry, and the source is right here.
 
 Here is everything AInnotator reads, and why:
 
@@ -105,11 +117,13 @@ Here is everything AInnotator reads, and why:
 - **the name of the app in front**, for the footer. Its window title too, but only if you have given AInnotator Accessibility access yourself; the app never asks for it, and the title goes only into the JSON file
 - **the address of the front tab** in Safari, Chrome or Arc, without the query and fragment, so no tokens end up in your prompt
 - **the repository and branch** of the folder your last-used terminal is in; Ghostty, Terminal and iTerm tell it which folder that is
+- **the connection of that terminal**, if it is an `ssh` session: the machine and the options of that `ssh` call, read from the running process. Only a fixed list of options is reused; anything that could run a command is dropped
 
 And everything it writes:
 
 - **`~/.ainnotator/`**: each capture as a PNG, with a JSON file of the same marks next to it. Both are deleted automatically after 1, 7 or 30 days; 7 is the default.
-- **the clipboard**: one item, like a file copied in Finder, holding the file, the picture and its path.
+- **`~/.ainnotator/` on the other machine**, only after you confirm that machine: the finished card as a PNG, through your own `ssh`. Older cards are removed there after the same 1, 7 or 30 days, the next time one is copied. No JSON, no unredacted image, no keys.
+- **the clipboard**: one item, like a file copied in Finder, holding the file, the picture and its path. While a terminal connected to a confirmed machine is in front, it holds the picture and the path on that machine instead, and goes back to the file when another app comes to the front.
 
 ## The keys
 
@@ -163,7 +177,7 @@ It works with the ones listed above, all checked by hand. Anything that accepts 
 English and German, in the menus, the overlay and the card's legend. Your notes stay in whatever language you type them. AInnotator follows your Mac's language: German if that is your first language, English otherwise.
 
 **Does it work over SSH?**
-No. A terminal receives a path on your Mac, and the machine on the other end can't open it.
+Yes, with a terminal connected by `ssh` in front. AInnotator copies the finished card to a private folder on that machine, through your own SSH setup, and pastes the path there. It asks once for each machine, and without your yes nothing connects. If the machine doesn't take the copy, the capture stays on your Mac. The terminal inside VS Code, mosh and cloud environments without SSH aren't covered.
 
 **Is this an Electron app?**
 No. It's Swift with AppKit and Core Animation (SwiftUI only in the settings window), with no web view and no dependencies. At rest it uses 15 MB.

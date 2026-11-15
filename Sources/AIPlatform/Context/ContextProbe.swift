@@ -44,6 +44,16 @@ import Foundation
         return CaptureContext(app: name, window: title, url: address, repo: repository?.repo, branch: repository?.branch)
     }
 
+    /// The machine the last used terminal tab is connected to through ssh, or nil. Reads nothing but that tab's
+    /// foreground program and its arguments.
+    public func remoteTarget() async -> RemoteTarget? {
+        let terminal = lastTerminal
+        return await bounded {
+            guard let terminal, let tty = terminalTTY(terminal), let arguments = foregroundArguments(ofTTY: tty) else { return nil }
+            return SSHCommand.target(fromArguments: arguments)
+        }
+    }
+
     /// macOS asks once per target and remembers the answer. Called after a capture, because the question would sit
     /// behind the overlay during one; until then URL and repository are simply left out.
     public func requestAutomationConsent() {
@@ -161,6 +171,18 @@ private func terminalTTY(_ bundle: String) -> String? {
 }
 
 private func foregroundDirectory(_ rawTTY: String) -> String? {
+    guard let pid = foregroundPID(ofTTY: rawTTY) else { return nil }
+    var path = proc_vnodepathinfo()
+    guard proc_pidinfo(pid, PROC_PIDVNODEPATHINFO, 0, &path, Int32(MemoryLayout<proc_vnodepathinfo>.size)) == MemoryLayout<proc_vnodepathinfo>.size else { return nil }
+    return withUnsafeBytes(of: path.pvi_cdir.vip_path) { String(decoding: $0.prefix { $0 != 0 }, as: UTF8.self) }
+}
+
+func foregroundPID(ofTTY rawTTY: String) -> pid_t? {
+    foregroundProcesses(ofTTY: rawTTY).flatMap(foregroundLeader)
+}
+
+/// The processes on a terminal's tty, each with its group and the group that is in the foreground.
+func foregroundProcesses(ofTTY rawTTY: String) -> [TTYProcess]? {
     let tty = rawTTY.hasPrefix("/dev/") ? String(rawTTY.dropFirst(5)) : rawTTY
     guard tty.hasPrefix("tty"), !tty.contains("/") else { return nil }
     var device = stat()
@@ -178,13 +200,9 @@ private func foregroundDirectory(_ rawTTY: String) -> String? {
             return nil
         }
         guard size <= capacity, size % MemoryLayout<kinfo_proc>.stride == 0 else { return nil }
-        let processes = records.prefix(size / MemoryLayout<kinfo_proc>.stride).map {
+        return records.prefix(size / MemoryLayout<kinfo_proc>.stride).map {
             TTYProcess(pid: $0.kp_proc.p_pid, group: $0.kp_eproc.e_pgid, foreground: $0.kp_eproc.e_tpgid)
         }
-        guard let pid = foregroundLeader(processes) else { return nil }
-        var path = proc_vnodepathinfo()
-        guard proc_pidinfo(pid, PROC_PIDVNODEPATHINFO, 0, &path, Int32(MemoryLayout<proc_vnodepathinfo>.size)) == MemoryLayout<proc_vnodepathinfo>.size else { return nil }
-        return withUnsafeBytes(of: path.pvi_cdir.vip_path) { String(decoding: $0.prefix { $0 != 0 }, as: UTF8.self) }
     }
     return nil
 }
@@ -193,6 +211,13 @@ struct TTYProcess: Sendable {
     let pid: pid_t
     let group: pid_t
     let foreground: pid_t
+}
+
+/// Every process of the foreground group, its leader first.
+func foregroundGroup(_ processes: [TTYProcess]) -> [pid_t] {
+    let members = processes.filter { $0.foreground > 0 && $0.group == $0.foreground }.map(\.pid)
+    guard let leader = foregroundLeader(processes) else { return members }
+    return [leader] + members.filter { $0 != leader }
 }
 
 func foregroundLeader(_ processes: [TTYProcess]) -> pid_t? {

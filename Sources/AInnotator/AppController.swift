@@ -24,6 +24,11 @@ final class AppController: NSObject, NSApplicationDelegate {
     private var context = CaptureContext()
     private var session = 0
     private var pendingClip: PendingClip?
+    /// The machine the terminal tab is connected to, and the app that was in front when the capture began.
+    private var remote: RemoteTarget?
+    private var frontBundle: String?
+    private let follower = ClipFollower()
+    private let copier = RemoteCopier()
     private var receipt: ReceiptPanel?
     private var hotkeyTime: UInt64 = 0
     private var cursorHidden = false
@@ -170,11 +175,16 @@ final class AppController: NSObject, NSApplicationDelegate {
         let current = session
         // The app name is there at once; the slower fields arrive while the user marks, or are left out.
         context = CaptureContext(app: NSWorkspace.shared.frontmostApplication?.localizedName)
+        frontBundle = NSWorkspace.shared.frontmostApplication?.bundleIdentifier
+        remote = nil
         Task {
-            let found = await probe.snapshot()
+            async let found = probe.snapshot()
+            async let target = probe.remoteTarget()
+            let (context, remote) = await (found, target)
             guard current == session else { return }
-            context = found
-            log.notice("context ready \(self.millisSinceHotkey(), format: .fixed(precision: 1)) ms")
+            self.context = context
+            self.remote = remote
+            log.notice("context ready \(self.millisSinceHotkey(), format: .fixed(precision: 1)) ms, remote \(remote != nil)")
         }
         let cursorDisplay = Self.displayUnderCursor() ?? CGMainDisplayID()
 
@@ -304,9 +314,23 @@ final class AppController: NSObject, NSApplicationDelegate {
         let path = CaptureStore.displayPath(url)
         let json = Data(Payload.json(snapshot, imagePath: path, context: context, createdAt: Date()).utf8)
         let retentionDays = preferences.retentionDays
+        // Nothing is copied to a machine the user has not said yes to.
+        let target = remote.flatMap { preferences.mayCopy(toRemote: $0.consentKey) ? $0 : nil }
+        // A machine that was found but never confirmed: the receipt asks, and nothing is sent until then.
+        let unconfirmed = target == nil && preferences.remoteCopyEnabled ? remote : nil
+        let copier = self.copier
         let clip = PendingClip(file: url)
         pendingClip = clip
-        Clipboard.publish(clip)
+        follower.stop()
+        if target != nil {
+            // The clipboard carries what fits the app in front: the path on the other machine for the terminal,
+            // the file for everything else.
+            clip.expectRemote()
+            Clipboard.publish(clip, form: ClipFollower.form(forFrontmost: frontBundle))
+            follower.follow(clip)
+        } else {
+            Clipboard.publish(clip)
+        }
         log.notice("clipboard published \(Double(DispatchTime.now().uptimeNanoseconds - t0) / 1e6, format: .fixed(precision: 2)) ms")
 
         let input = CardRenderer.Input(source: .surface(surface), state: snapshot, footer: Payload.contextLine(context) ?? "", language: language)
@@ -329,6 +353,19 @@ final class AppController: NSObject, NSApplicationDelegate {
             }
             if !saved { store.discard(url) }
             clip.fulfill(png: png, saved: saved)
+            // The copy follows the file: the path on the other machine reaches a target only once the capture
+            // lies there. A paste in the meantime waits for it.
+            var remotePath: String?
+            if let target {
+                if saved {
+                    let begun = DispatchTime.now().uptimeNanoseconds
+                    let result = copier.copy(url, to: target, retentionDays: retentionDays)
+                    remotePath = try? result.get()
+                    log.notice("remote copy \(remotePath != nil ? "done" : "failed") \(Double(DispatchTime.now().uptimeNanoseconds - begun) / 1e6, format: .fixed(precision: 0)) ms")
+                }
+                clip.fulfillRemote(path: remotePath)
+            }
+            let copyFailed = target != nil && remotePath == nil
             store.removeExpired(days: retentionDays)
             log.notice("export done \(Double(DispatchTime.now().uptimeNanoseconds - t0) / 1e6, format: .fixed(precision: 1)) ms")
             let preview = saved ? CardRenderer.render(input, previewWidth: Self.previewWidth) : nil
@@ -336,6 +373,11 @@ final class AppController: NSObject, NSApplicationDelegate {
             await MainActor.run {
                 // No file, so nothing may name it. The pasteboard is this export's own even if a newer capture has begun.
                 if !saved { Clipboard.keepOnlyImage(of: clip) }
+                // Without a copy on the other machine the capture stays what it is everywhere else: a local file.
+                if copyFailed {
+                    self.follower.stop()
+                    if saved { Clipboard.switchForm(of: clip, to: .file) }
+                }
                 // A newer capture has begun: this receipt would sit behind that overlay.
                 guard exportSession == self.session else { return }
                 guard let preview else {
@@ -343,13 +385,16 @@ final class AppController: NSObject, NSApplicationDelegate {
                     return
                 }
                 let sel = snapshot.sel ?? .full
-                self.showReceipt(ReceiptModel(
+                let model = ReceiptModel(
                     text: url.path, card: preview,
                     width: Int((sel.w * Double(snapshot.stage.pixelWidth)).rounded()),
                     height: Int((sel.h * Double(snapshot.stage.pixelHeight)).rounded()),
                     pngPath: path, jsonPath: CaptureStore.displayPath(url.deletingPathExtension().appendingPathExtension("json")),
-                    pngBytes: pngBytes, jsonBytes: json.count, marks: snapshot.marks, time: Date()
-                ), display: display)
+                    pngBytes: pngBytes, jsonBytes: json.count, marks: snapshot.marks, time: Date(),
+                    remote: target.map { remotePath != nil ? .copied($0.destination) : .failed($0.destination) }
+                        ?? unconfirmed.map { .ask($0.destination) }
+                )
+                self.showReceipt(model, display: display, asking: unconfirmed.map { ($0, url, clip) })
                 self.probe.requestAutomationConsent()
             }
         }
@@ -377,12 +422,44 @@ final class AppController: NSObject, NSApplicationDelegate {
     /// Twice the card's layout width of 320 points, sharp on Retina displays.
     private nonisolated static let previewWidth = 640
 
-    private func showReceipt(_ model: ReceiptModel, display: CGDirectDisplayID) {
+    private func showReceipt(_ model: ReceiptModel, display: CGDirectDisplayID, asking: (RemoteTarget, URL, PendingClip)? = nil) {
         dismissReceipt()
         let panel = ReceiptPanel(model: model, language: language) { [weak self] in self?.beginCapture(repeating: false) }
         panel.onClose = { [weak self] in self?.receiptClosed() }
+        if let (target, file, clip) = asking {
+            panel.onConfirmRemote = { [weak self] in self?.confirmRemote(target, file: file, clip: clip, model: model, display: display) }
+        }
         receipt = panel
         panel.show(on: NSScreen.screens.first { Self.displayID(of: $0) == display } ?? NSScreen.main)
+    }
+
+    /// The user said yes for this machine: remember it, copy the capture that is still on the clipboard, and show
+    /// what became of it. From the next capture on the copy happens without a question.
+    private func confirmRemote(_ target: RemoteTarget, file: URL, clip: PendingClip, model: ReceiptModel, display: CGDirectDisplayID) {
+        preferences.confirmRemote(target.consentKey)
+        guard pendingClip === clip else { return }
+        let copier = self.copier
+        let retentionDays = preferences.retentionDays
+        let log = self.log
+        clip.expectRemote()
+        follower.follow(clip)
+        Clipboard.switchForm(of: clip, to: ClipFollower.form(forFrontmost: NSWorkspace.shared.frontmostApplication?.bundleIdentifier))
+        Task.detached(priority: .userInitiated) {
+            let begun = DispatchTime.now().uptimeNanoseconds
+            let path = try? copier.copy(file, to: target, retentionDays: retentionDays).get()
+            clip.fulfillRemote(path: path)
+            log.notice("remote copy after consent \(path != nil ? "done" : "failed") \(Double(DispatchTime.now().uptimeNanoseconds - begun) / 1e6, format: .fixed(precision: 0)) ms")
+            await MainActor.run {
+                guard self.pendingClip === clip else { return }
+                if path == nil {
+                    self.follower.stop()
+                    Clipboard.switchForm(of: clip, to: .file)
+                }
+                var shown = model
+                shown.remote = path != nil ? .copied(target.destination) : .failed(target.destination)
+                self.showReceipt(shown, display: display)
+            }
+        }
     }
 
     private func dismissReceipt() {

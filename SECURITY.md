@@ -24,8 +24,8 @@ Only the latest release receives fixes.
 
 ## What AInnotator protects against, and what it doesn't
 
-- **In scope:** whatever is on your screen, in a window title, a page address or a branch name must not make the app run commands, write outside its own folder or send anything anywhere. A redacted area must not survive in any file the app writes or in what it puts on the clipboard.
-- **Not in scope:** malware already running under your user account. It can read the same files and the same clipboard as you, and the app cannot stop it. What an AI tool does with an image you paste into it is that tool's business; the legend on the card helps a model tell your marks from the screen, but it is a guide, not a wall.
+- **In scope:** whatever is on your screen, in a window title, a page address, a branch name or the command line of your terminal must not make the app run commands, write outside its own folder or send anything anywhere. The one exception is a capture you let it copy to the machine your terminal is connected to, after you confirmed that machine; only the finished card goes, through your own `ssh`, into `~/.ainnotator` there. Nothing in what the app reads may add an option to that call that runs a command, or send it anywhere else. A redacted area must not survive in any file the app writes, on either machine, or in what it puts on the clipboard.
+- **Not in scope:** malware already running under your user account. It can read the same files and the same clipboard as you, and the app cannot stop it. What an AI tool does with an image you paste into it is that tool's business; the legend on the card helps a model tell your marks from the screen, but it is a guide, not a wall. The same goes for the machine you copy to: once the card is there, it is under that machine's own rules and its administrators.
 
 Each way in and how it is closed: [threat model](THREAT_MODEL.md).
 

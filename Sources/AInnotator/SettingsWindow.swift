@@ -17,7 +17,7 @@ final class SettingsWindow {
 
     func show() {
         if window == nil {
-            let window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 460, height: 400),
+            let window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 460, height: 560),
                                   styleMask: [.titled, .closable, .miniaturizable], backing: .buffered, defer: false)
             window.title = copy.title
             window.contentView = NSHostingView(rootView: SettingsView(preferences: preferences, copy: copy))
@@ -38,11 +38,15 @@ private struct SettingsView: View {
     @State private var loginBusy = false
     @State private var loginMessage = ""
     @State private var screenAllowed = false
+    @State private var remoteEnabled: Bool
+    @State private var confirmedCount: Int
 
     init(preferences: Preferences, copy: SettingsCopy) {
         self.preferences = preferences
         self.copy = copy
         _days = State(initialValue: preferences.retentionDays)
+        _remoteEnabled = State(initialValue: preferences.remoteCopyEnabled)
+        _confirmedCount = State(initialValue: preferences.confirmedRemotes.count)
     }
 
     var body: some View {
@@ -59,6 +63,17 @@ private struct SettingsView: View {
                 LabeledContent(copy.capture, value: "⌥⇧A")
                 LabeledContent(copy.repeatCapture, value: "⌥⇧R")
             }
+            Section(copy.remoteSection) {
+                Toggle(copy.remote, isOn: $remoteEnabled)
+                    .onChange(of: remoteEnabled) { _, value in preferences.remoteCopyEnabled = value }
+                Text(copy.remoteExplanation).foregroundStyle(.secondary)
+                LabeledContent(copy.confirmedRemotes(confirmedCount)) {
+                    Button(copy.forgetRemotes) {
+                        preferences.forgetRemotes()
+                        confirmedCount = 0
+                    }.disabled(confirmedCount == 0)
+                }
+            }
             Section(copy.screen) {
                 Text(screenAllowed ? copy.screenAllowed : copy.screenDenied)
                 Button(copy.openSettings) {
@@ -69,13 +84,14 @@ private struct SettingsView: View {
             }
         }
         .formStyle(.grouped)
-        .frame(width: 460, height: 400)
+        .frame(width: 460, height: 560)
         .onAppear(perform: refresh)
         .onReceive(NotificationCenter.default.publisher(for: NSApplication.didBecomeActiveNotification)) { _ in refresh() }
     }
 
     private func refresh() {
         screenAllowed = CGPreflightScreenCaptureAccess()
+        confirmedCount = preferences.confirmedRemotes.count
         let status = SMAppService.mainApp.status
         loginEnabled = status == .enabled || status == .requiresApproval
         loginMessage = status == .requiresApproval ? copy.loginApproval : ""
